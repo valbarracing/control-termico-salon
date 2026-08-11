@@ -1,7 +1,6 @@
 from datetime import datetime
 import math
 import requests
-from zoneinfo import ZoneInfo
 import streamlit as st
 
 # Configuración de página
@@ -9,14 +8,17 @@ st.set_page_config(
     page_title="Control Térmico Salón", page_icon="🌡️", layout="centered"
 )
 
-# Auto-refresco en el navegador cada 5 minutos (300,000 ms)
+# Auto-refresco automático cada 5 minutos
 st.html(
     "<script>setTimeout(function(){ window.location.reload(); }, 300000);</script>"
 )
 
 
 def obtener_hora_lima():
-    return datetime.now(ZoneInfo("America/Lima")).hour
+    """Obtiene la hora UTC y le resta 5 horas para obtener la hora exacta de Lima (UTC-5)."""
+    hora_utc = datetime.utcnow().hour
+    hora_lima = (hora_utc - 5) % 24
+    return hora_lima
 
 
 @st.cache_data(ttl=300)
@@ -77,7 +79,7 @@ def calcular(temp_amb, sens_term, humedad, hora):
     return f"{modo} {b10:g}"
 
 
-# Interfaz Streamlit
+# Interfaz gráfica
 st.title("🌡️ Control Térmico del Salón")
 st.caption("Matriz de Automatización V2.0 en Python")
 
@@ -99,8 +101,8 @@ col3.metric("Humedad Relativa", f"{humedad} %")
 col4.metric("Hora Evaluada", f"{hora}:00 hrs")
 
 st.markdown("---")
-hora_actual = datetime.now(ZoneInfo("America/Lima")).strftime("%H:%M:%S")
-st.caption(f"Última actualización: {hora_actual} (Hora de Lima)")
+hora_lima_str = f"{obtener_hora_lima()}:{datetime.utcnow().strftime('%M:%S')}"
+st.caption(f"Última actualización: {hora_lima_str} (Hora de Lima)")
 
 if st.button("🔄 Actualizar Datos Ahora"):
     st.cache_data.clear()
